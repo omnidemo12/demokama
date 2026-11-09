@@ -27,17 +27,18 @@
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 380px; /* রিলসের মতো চিকন এবং পারফেক্ট সাইজ */
             background: #1f1f1f;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
         }
 
-        /* ভিডিও প্লেয়ার কন্টেইনার (মোবাইল ও পিসির জন্য রেসপন্সিভ) */
+        /* ভিডিও প্লেয়ার কন্টেইনার (রিলস/শর্টস ৯:১৬ ভার্টিক্যাল অনুপাত) */
         .video-container {
             position: relative;
             width: 100%;
+            aspect-ratio: 9 / 16; /* লম্বালম্বি রিলস ফরম্যাট */
             background: #000;
             display: flex;
             align-items: center;
@@ -46,8 +47,8 @@
 
         video {
             width: 100%;
-            max-height: 400px;
-            object-fit: cover;
+            height: 100%;
+            object-fit: cover; /* ভিডিও চারপাশে ছড়িয়ে ফিট হবে */
             display: block;
             cursor: pointer;
         }
@@ -112,14 +113,14 @@
         .left-controls, .right-controls {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .control-btn {
             background: none;
             border: none;
             color: #fff;
-            font-size: 16px;
+            font-size: 15px;
             cursor: pointer;
             transition: color 0.2s;
         }
@@ -129,25 +130,25 @@
         }
 
         .time-display {
-            font-size: 12px;
+            font-size: 11px;
             color: #ddd;
         }
 
         /* ভিডিওর নিচের সেকশন */
         .content-section {
-            padding: 18px;
+            padding: 15px;
             text-align: center;
         }
 
         .package-title {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             color: #ffcc00;
             margin-bottom: 12px;
             letter-spacing: 0.5px;
         }
 
-        /* বাটন দুটি ডিজাইন (মোবাইলে নিচে নিচে বা পাশে সুন্দর দেখানোর জন্য) */
+        /* বাটন দুটি ডিজাইন */
         .action-buttons {
             display: flex;
             gap: 10px;
@@ -156,16 +157,16 @@
 
         .btn {
             flex: 1;
-            padding: 12px 10px;
+            padding: 10px 8px;
             border: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
             text-decoration: none;
             transition: transform 0.2s, opacity 0.2s;
         }
@@ -190,21 +191,6 @@
 
         .btn-chat:hover {
             background-color: #1ebe5d;
-        }
-
-        /* মোবাইল ডিভাইসের জন্য ফ্লেক্স অ্যাডজাস্টমেন্ট */
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            .action-buttons {
-                flex-direction: column;
-            }
-            .watermark {
-                font-size: 14px;
-                top: 10px;
-                left: 10px;
-            }
         }
     </style>
 </head>
