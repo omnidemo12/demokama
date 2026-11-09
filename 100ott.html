@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omni OTT - Video Player</title>
+    <!-- FontAwesome আইকনের জন্য -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f0f0f;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: #1f1f1f;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        /* ভিডিও প্লেয়ার কন্টেইনার (মোবাইল ও পিসির জন্য রেসপন্সিভ) */
+        .video-container {
+            position: relative;
+            width: 100%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* ওয়াটারমার্ক ডিজাইন (30% Opacity & Bold) */
+        .watermark {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 16px;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            z-index: 5;
+        }
+
+        /* ইউটিউব স্টাইল কাস্টম কন্ট্রোলস বার */
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.85));
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-container:hover .video-controls,
+        .video-container.touch-active .video-controls {
+            opacity: 1;
+        }
+
+        /* প্রোগ্রেস বা ডিউরেশন বার */
+        .progress-bar-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #ff0000; /* ইউটিউব রেড */
+            width: 0%;
+            border-radius: 3px;
+        }
+
+        .control-buttons-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .control-btn:hover {
+            color: #ff0000;
+        }
+
+        .time-display {
+            font-size: 12px;
+            color: #ddd;
+        }
+
+        /* ভিডিওর নিচের সেকশন */
+        .content-section {
+            padding: 18px;
+            text-align: center;
+        }
+
+        .package-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffcc00;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* বাটন দুটি ডিজাইন (মোবাইলে নিচে নিচে বা পাশে সুন্দর দেখানোর জন্য) */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-call {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+
+        .btn-call:hover {
+            background-color: #218838;
+        }
+
+        .btn-chat {
+            background-color: #25D366; /* WhatsApp Green */
+            color: #ffffff;
+        }
+
+        .btn-chat:hover {
+            background-color: #1ebe5d;
+        }
+
+        /* মোবাইল ডিভাইসের জন্য ফ্লেক্স অ্যাডজাস্টমেন্ট */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .action-buttons {
+                flex-direction: column;
+            }
+            .watermark {
+                font-size: 14px;
+                top: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ভিডিও প্লেয়ার ও ওয়াটারমার্ক -->
+        <div class="video-container" id="videoContainer">
+            <div class="watermark">Omni OTT</div>
+            
+            <!-- ড্রপবক্স লিংক এবং ভিডিওর থাম্বনেইল (poster ইমেজ) -->
+            <video id="mainVideo" 
+                   poster="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop" 
+                   src="https://www.dropbox.com/scl/fi/ph4tzv114uzkvy5x3fe5z/low-mb.mp4?rlkey=a7hdda7cpgeewnj2hnf6wde00&st=8i46662l&dl=1" 
+                   preload="metadata"></video>
+
+            <!-- ইউটিউব স্টাইল কন্ট্রোল বার -->
+            <div class="video-controls">
+                <div class="progress-bar-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="control-buttons-row">
+                    <div class="left-controls">
+                        <button class="control-btn" id="playPauseBtn"><i class="fa-solid fa-play"></i></button>
+                        <button class="control-btn" id="muteUnmuteBtn"><i class="fa-solid fa-volume-high"></i></button>
+                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                    </div>
+                    <div class="right-controls">
+                        <button class="control-btn" id="fullscreenBtn"><i class="fa-solid fa-expand"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- নিচে প্যাকেজ কেনার নোটিশ ও বাটন দুটি -->
+        <div class="content-section">
+            <div class="package-title">প্যাকেজ কেনার জন্য যোগাযোগ করুন</div>
+            
+            <div class="action-buttons">
+                <!-- কল করুন বাটন -->
+                <a href="tel:01620386401" class="btn btn-call">
+                    <i class="fa-solid fa-phone"></i> কল করুন
+                </a>
+
+                <!-- মেসেজ করুন / WhatsApp বাটন -->
+                <a href="https://wa.me/8801620386401?text=Hi,%20I%20want%20to%20buy%20Omni%20OTT%20package." target="_blank" class="btn btn-chat">
+                    <i class="fa-brands fa-whatsapp"></i> মেসেজ করুন
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('mainVideo');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const muteUnmuteBtn = document.getElementById('muteUnmuteBtn');
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const videoContainer = document.getElementById('videoContainer');
+
+        // প্লে এবং পজ টগল
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+                playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            } else {
+                video.pause();
+                playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            }
+        }
+
+        playPauseBtn.addEventListener('click', togglePlay);
+        video.addEventListener('click', togglePlay);
+
+        // মোবাইল টাচে কন্ট্রোল বার শো/হাইডের জন্য
+        videoContainer.addEventListener('click', () => {
+            videoContainer.classList.add('touch-active');
+            setTimeout(() => {
+                videoContainer.classList.remove('touch-active');
+            }, 3000);
+        });
+
+        // মিউট এবং আনমিউট টগল
+        muteUnmuteBtn.addEventListener('click', () => {
+            video.muted = !video.muted;
+            if (video.muted) {
+                muteUnmuteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+            } else {
+                muteUnmuteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+            }
+        });
+
+        // সময় ফরম্যাট করার ফাংশন
+        function formatTime(seconds) {
+            let minutes = Math.floor(seconds / 60);
+            let secs = Math.floor(seconds % 60);
+            return minutes + ":" + (secs < 10 ? "0" : "") + secs;
+        }
+
+        // ডিউরেশন বার এবং টাইম আপডেট
+        video.addEventListener('timeupdate', () => {
+            let percentage = (video.currentTime / video.duration) * 100;
+            progressBar.style.width = percentage + '%';
+            timeDisplay.innerText = formatTime(video.currentTime) + " / " + (isNaN(video.duration) ? "0:00" : formatTime(video.duration));
+        });
+
+        // ডিউরেশন বারে ক্লিক করে নির্দিষ্ট সময়ে যাওয়া
+        progressContainer.addEventListener('click', (e) => {
+            let width = progressContainer.clientWidth;
+            let clickX = e.offsetX;
+            let duration = video.duration;
+            video.currentTime = (clickX / width) * duration;
+        });
+
+        // ফুলস্ক্রিন মোড
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                videoContainer.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+    </script>
+</body>
+</html>
