@@ -27,18 +27,18 @@
 
         .container {
             width: 100%;
-            max-width: 380px; /* রিলসের মতো চিকন এবং পারফেক্ট সাইজ */
+            max-width: 380px; /* রিলস ফরম্যাট সাইজ */
             background: #1f1f1f;
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
         }
 
-        /* ভিডিও প্লেয়ার কন্টেইনার (রিলস/শর্টস ৯:১৬ ভার্টিক্যাল অনুপাত) */
+        /* ভিডিও প্লেয়ার কন্টেইনার */
         .video-container {
             position: relative;
             width: 100%;
-            aspect-ratio: 9 / 16; /* লম্বালম্বি রিলস ফরম্যাট */
+            aspect-ratio: 9 / 16; /* রিলস ৯:১৬ অনুপাত */
             background: #000;
             display: flex;
             align-items: center;
@@ -48,9 +48,30 @@
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* ভিডিও চারপাশে ছড়িয়ে ফিট হবে */
+            object-fit: cover;
             display: block;
             cursor: pointer;
+        }
+
+        /* লোডিং স্পিনার ডিজাইন (১.৫ সেকেন্ড লোডিংয়ের জন্য) */
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #ff0000;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 0.8s linear infinite;
+            display: none; /* ডিফল্টভাবে অফ থাকবে */
+            z-index: 10;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
         /* ওয়াটারমার্ক ডিজাইন (30% Opacity & Bold) */
@@ -80,6 +101,7 @@
             gap: 8px;
             opacity: 0;
             transition: opacity 0.3s ease;
+            z-index: 6;
         }
 
         .video-container:hover .video-controls,
@@ -201,11 +223,18 @@
         <div class="video-container" id="videoContainer">
             <div class="watermark">Omni OTT</div>
             
-            <!-- ড্রপবক্স লিংক এবং ভিডিওর থাম্বনেইল (poster ইমেজ) -->
+            <!-- ১.৫ সেকেন্ড লোডিংয়ের জন্য স্পিনার -->
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            
+            <!-- ড্রপবক্স লিংক, autoplay, muted এবং poster সহ -->
             <video id="mainVideo" 
+                   autoplay 
+                   muted 
+                   loop
+                   playsinline
                    poster="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop" 
-                   src="https://www.dropbox.com/scl/fi/ph4tzv114uzkvy5x3fe5z/low-mb.mp4?rlkey=a7hdda7cpgeewnj2hnf6wde00&st=8i46662l&dl=1" 
-                   preload="metadata"></video>
+                   src="https://www.dropbox.com/scl/fi/ph4tzv114uzkvy5x3fe5z/low-mb.mp4?rlkey=a7hdda7cpgeewnj2hnf6wde00&st=8i46662l&dl=1">
+            </video>
 
             <!-- ইউটিউব স্টাইল কন্ট্রোল বার -->
             <div class="video-controls">
@@ -214,8 +243,8 @@
                 </div>
                 <div class="control-buttons-row">
                     <div class="left-controls">
-                        <button class="control-btn" id="playPauseBtn"><i class="fa-solid fa-play"></i></button>
-                        <button class="control-btn" id="muteUnmuteBtn"><i class="fa-solid fa-volume-high"></i></button>
+                        <button class="control-btn" id="playPauseBtn"><i class="fa-solid fa-pause"></i></button>
+                        <button class="control-btn" id="muteUnmuteBtn"><i class="fa-solid fa-volume-xmark"></i></button>
                         <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
                     </div>
                     <div class="right-controls">
@@ -252,9 +281,51 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const videoContainer = document.getElementById('videoContainer');
+        const loadingSpinner = document.getElementById('loadingSpinner');
 
-        // প্লে এবং পজ টগল
-        function togglePlay() {
+        // পেজ লোড হওয়ার সাথে সাথে সাইলেন্ট অটো-প্লে শুরু হবে
+        window.addEventListener('DOMContentLoaded', () => {
+            video.play().catch(error => {
+                console.log("Autoplay prevented by browser policy:", error);
+            });
+        });
+
+        // ভিডিওর ওপর ক্লিক করলে ১.৫ সেকেন্ড লোডিং নিয়ে সাউন্ডসহ প্লে হবে
+        videoContainer.addEventListener('click', (e) => {
+            // যদি কন্ট্রোল বা প্রোগ্রেস বারে ক্লিক করা হয়, তবে টগল হবে না
+            if(e.target.closest('.video-controls') || e.target.closest('.action-buttons')) return;
+
+            // স্পিনার বা লোডিং অ্যানিমেশন শো করা
+            loadingSpinner.style.display = 'block';
+
+            // ১.৫ সেকেন্ড (১৫০০ মিলি সেকেন্ড) ডিলে বা লোডিং টাইম
+            setTimeout(() => {
+                loadingSpinner.style.display = 'none';
+
+                // আনমিউট করা এবং সাউন্ডসহ প্লে করা
+                if (video.muted) {
+                    video.muted = false;
+                    muteUnmuteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                }
+
+                if (video.paused) {
+                    video.play();
+                    playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                } else {
+                    video.pause();
+                    playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                }
+            }, 1500); // ১.৫ সেকেন্ড ডিলে
+
+            // মোবাইল টাচে কন্ট্রোল বার দেখানো
+            videoContainer.classList.add('touch-active');
+            setTimeout(() => {
+                videoContainer.classList.remove('touch-active');
+            }, 3000);
+        });
+
+        // প্লে/পজ বাটন কন্ট্রোল
+        playPauseBtn.addEventListener('click', () => {
             if (video.paused) {
                 video.play();
                 playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
@@ -262,20 +333,9 @@
                 video.pause();
                 playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
             }
-        }
-
-        playPauseBtn.addEventListener('click', togglePlay);
-        video.addEventListener('click', togglePlay);
-
-        // মোবাইল টাচে কন্ট্রোল বার শো/হাইডের জন্য
-        videoContainer.addEventListener('click', () => {
-            videoContainer.classList.add('touch-active');
-            setTimeout(() => {
-                videoContainer.classList.remove('touch-active');
-            }, 3000);
         });
 
-        // মিউট এবং আনমিউট টগল
+        // মিউট এবং আনমিউট টগল বাটন
         muteUnmuteBtn.addEventListener('click', () => {
             video.muted = !video.muted;
             if (video.muted) {
